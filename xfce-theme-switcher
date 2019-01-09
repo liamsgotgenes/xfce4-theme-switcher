@@ -1,0 +1,101 @@
+#!/bin/bash
+#if [ $# -ne 2 ];
+#then
+#    echo Invalid Usage
+#    exit
+#fi
+for i in $@
+do
+    if [ $i = "--wal-theme" ];
+    then
+        wal_enabled=true
+    else
+        wal_enabled=false
+    fi
+done
+
+config_loc="/home/$USER/.config/xfce4-theme-switcher/$2"
+log_name=$(date +"%m%d%y_%H%M%S")
+
+if [ $1 = "-l" ]; #change the theme to the name given
+    then
+    array=("xsettings" "xfwm4" "xfce4-desktop" "xfce4-panel")
+    for file in ${array[@]}
+    do
+        echo $config_loc/$file.conf | xargs cat | while read -r line
+        do
+            count=0
+            property=""
+            value=""
+            for word in $line
+            do
+                if [ $count -gt "0" ];
+                then
+                    value="$value $word"
+                else
+                    property="$property $word"
+                fi
+                let "count++"
+            done
+            property_trimed="$(echo -e "${property}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+            value_trimed="$(echo -e "${value}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+            xfconf-query -c $file -p $property_trimed -s "$value_trimed" &>> $config_loc/$log_name.log
+            if [ $? -eq "0" ];
+            then
+                echo -e Changed $property to the value $value_trimed >> $config_loc/$log_name.log
+            else
+                echo -e ERROR: Could not change $property_trimed to the value $value_trimed &>> $config_loc/$log_name.log
+            fi
+        done
+    done
+    cp /$config_loc/terminalrc /home/$USER/.config/xfce4/terminal/terminalrc >> $config_loc/$log_name.log
+    echo -e Loaded terminal preferences >> $config_loc/$log_name.log
+    if [ -f $config_loc/sequences ]; then
+        cp $config_loc/sequences /home/$USER/.cache/wal/sequences
+        ls -1 /dev/pts | while read -r terminal
+        do
+            (cat ~/.cache/wal/sequences &) > /dev/pts/$terminal &> /dev/null
+        done
+
+    fi
+    xfce4-panel -r
+elif [ $1 = "-g" ]; #generate a new theme using current settings
+then
+    if [ -d $config_loc ];
+    then
+        echo Theme $2 already exists! Do you want to overwrite it? [y/n]
+        read input
+        if [ $input != "y" ];
+        then
+            exit
+        fi
+    else
+        mkdir $config_loc
+    fi
+    xfconf-query -c xsettings -lv > $config_loc/xsettings.conf
+    echo -e Generated xsettings theme $2
+    xfconf-query -c xfwm4 -lv > $config_loc/xfwm4.conf
+    echo -e Generated xfwm4 theme $2
+    xfconf-query -c xfce4-desktop -lv > $config_loc/xfce4-desktop.conf
+    echo -e Generated desktop theme $2
+    xfconf-query -c xfce4-panel -lv > $config_loc/xfce4-panel.conf
+    echo -e Generated panel theme $2
+    cp /home/$USER/.config/xfce4/terminal/terminalrc $config_loc/terminalrc
+    echo -e Copied terminal preferences
+    if [ "$wal_enabled" = true ]; then
+        cp /home/$USER/.cache/wal/sequences $config_loc/sequences
+        echo wal theme saved
+    fi
+elif [ $1 = "-d" ]; #delete theme
+then
+    echo Are you sure you want to delete xfce4 theme $2? [y/n]
+    read input
+    if [ $input != "y" ];
+    then
+        exit
+    fi
+    rm -rf $config_loc
+elif [ $1 = "-l" ]; #list all themes
+then
+    ls -1 /home/$USER/.config/xfce4-theme-switcher
+fi
