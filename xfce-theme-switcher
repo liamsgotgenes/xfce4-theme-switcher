@@ -1,4 +1,8 @@
 #!/bin/bash
+
+############
+### TODO ###
+############
 #if [ $# -ne 2 ];
 #then
 #    echo Invalid Usage
@@ -18,7 +22,7 @@ config_loc="/home/$USER/.config/xfce4-theme-switcher/$2"
 log_name=$(date +"%m%d%y_%H%M%S")
 
 if [ $1 = "-l" ]; #change the theme to the name given
-    then
+then
     array=("xsettings" "xfwm4" "xfce4-desktop" "xfce4-panel")
     for file in ${array[@]}
     do
@@ -37,14 +41,14 @@ if [ $1 = "-l" ]; #change the theme to the name given
                 fi
                 let "count++"
             done
-            property_trimed="$(echo -e "${property}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-            value_trimed="$(echo -e "${value}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-            xfconf-query -c $file -p $property_trimed -s "$value_trimed" &>> $config_loc/$log_name.log
+            property="$(echo -e "${property}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+            value="$(echo -e "${value}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+            xfconf-query -c $file -p $property -s "$value" &>> $config_loc/$log_name.log
             if [ $? -eq "0" ];
             then
-                echo -e Changed $property to the value $value_trimed >> $config_loc/$log_name.log
+                echo -e Changed $property to the value $value >> $config_loc/$log_name.log
             else
-                echo -e ERROR: Could not change $property_trimed to the value $value_trimed &>> $config_loc/$log_name.log
+                echo -e ERROR: Could not change $property to the value $value &>> $config_loc/$log_name.log
             fi
         done
     done
@@ -54,7 +58,7 @@ if [ $1 = "-l" ]; #change the theme to the name given
         cp $config_loc/sequences /home/$USER/.cache/wal/sequences
         ls -1 /dev/pts | while read -r terminal
         do
-            (cat ~/.cache/wal/sequences &) > /dev/pts/$terminal &> /dev/null
+            (cat ~/.cache/wal/sequences &) > /dev/pts/$terminal
         done
 
     fi
@@ -83,7 +87,7 @@ then
     cp /home/$USER/.config/xfce4/terminal/terminalrc $config_loc/terminalrc
     echo -e Copied terminal preferences
     if [ "$wal_enabled" = true ]; then
-        cp /home/$USER/.cache/wal/sequences $config_loc/sequences
+        cp /home/$USER/.cache/wal/sequences $config_loc/sequences &> /dev/null
         echo wal theme saved
     fi
 elif [ $1 = "-d" ]; #delete theme
@@ -95,7 +99,7 @@ then
         exit
     fi
     rm -rf $config_loc
-elif [ $1 = "-l" ]; #list all themes
+elif [ $1 = "--list" ]; #list all themes
 then
     ls -1 /home/$USER/.config/xfce4-theme-switcher
 fi
