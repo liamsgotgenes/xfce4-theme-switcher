@@ -18,7 +18,10 @@ function help() {
     echo -e " -p\t\tcycle to the previous theme"
     echo -e " -s\t\tsave the current xfce4 settings as a theme given the theme name"
     echo -e " --list\t\tlist all themes"
-    echo -e " --help\t\tdisplay this help\n"
+    echo -e " --help\t\tdisplay this help"
+    echo -e " --wal-theme\tsaves pywal terminal color-scheme"
+    echo -e "\t\tmust have pywal to use"
+    echo -e "\t\tonly use on saves\n"
     exit
 }
 function load_theme() {
