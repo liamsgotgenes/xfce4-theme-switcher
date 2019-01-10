@@ -5,7 +5,7 @@ function invalid() {
     exit
 }
 function help() {
-    echo -e "Usage:"
+    echo -e "\nUsage:"
     echo -e " xfce4-theme-switcher [OPTION]"
     echo -e " xfce4-theme-switcher -l [THEME NAME]"
     echo -e " xfce4-theme-switcher -s [THEME NAME]"
@@ -45,14 +45,14 @@ function load_theme() {
             xfconf-query -c $file -p $property -s "$value" &>> $config_loc/$log_name.log
             if [ $? -eq "0" ];
             then
-                echo -e Changed $property to the value $value >> $config_loc/$log_name.log
+                echo -e Changed $property to the value $value &>> $config_loc/$log_name.log
             else
                 echo -e ERROR: Could not change $property to the value $value &>> $config_loc/$log_name.log
             fi
         done
     done
-    cp /$config_loc/terminalrc /home/$USER/.config/xfce4/terminal/terminalrc >> $config_loc/$log_name.log
-    echo -e Loaded terminal preferences >> $config_loc/$log_name.log
+    cp /$config_loc/terminalrc /home/$USER/.config/xfce4/terminal/terminalrc &>> $config_loc/$log_name.log
+    echo -e Loaded terminal preferences &>> $config_loc/$log_name.log
     if [ -f $config_loc/sequences ]; then
         cp $config_loc/sequences /home/$USER/.cache/wal/sequences
         ls -1 /dev/pts | while read -r terminal
@@ -75,6 +75,11 @@ function load_theme() {
 if [ $# -eq 0 ];
 then
     invalid
+fi
+
+if [ ! -d /home/$USER/.config/xfce4-theme-switcher ];
+then
+    mkdir /home/$USER/.config/xfce4-theme-switcher
 fi
 
 config_loc="/home/$USER/.config/xfce4-theme-switcher/$2"
@@ -160,7 +165,7 @@ then
     echo -e Generated desktop theme $2
     xfconf-query -c xfce4-panel -lv > $config_loc/xfce4-panel.conf
     echo -e Generated panel theme $2
-    cp /home/$USER/.config/xfce4/terminal/terminalrc $config_loc/terminalrc
+    cp /home/$USER/.config/xfce4/terminal/terminalrc $config_loc/terminalrc &> /dev/null
     echo -e Copied terminal preferences
     if [ "$wal_enabled" = true ]; then
         cp /home/$USER/.cache/wal/sequences $config_loc/sequences &> /dev/null
