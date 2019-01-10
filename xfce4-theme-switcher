@@ -42,6 +42,7 @@ function load_theme() {
             done
             property="$(echo -e "${property}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
             value="$(echo -e "${value}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+            rm $config_loc/*log &> /dev/null
             xfconf-query -c $file -p $property -s "$value" &>> $config_loc/$log_name.log
             if [ $? -eq "0" ];
             then
