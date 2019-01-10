@@ -1,28 +1,6 @@
 #!/bin/bash
 
-############
-### TODO ###
-############
-#if [ $# -ne 2 ];
-#then
-#    echo Invalid Usage
-#    exit
-#fi
-for i in $@
-do
-    if [ $i = "--wal-theme" ];
-    then
-        wal_enabled=true
-    else
-        wal_enabled=false
-    fi
-done
-
-config_loc="/home/$USER/.config/xfce4-theme-switcher/$2"
-log_name=$(date +"%m%d%y_%H%M%S")
-
-if [ $1 = "-l" ]; #change the theme to the name given
-then
+function load_theme() {
     array=("xsettings" "xfwm4" "xfce4-desktop" "xfce4-panel")
     for file in ${array[@]}
     do
@@ -63,8 +41,82 @@ then
 
     fi
     xfce4-panel -r
-elif [ $1 = "-g" ]; #generate a new theme using current settings
+    echo $theme_load > /home/$USER/.config/xfce4-theme-switcher/theme.current
+}
+
+############
+### TODO ###
+############
+#if [ $# -ne 2 ];
+#then
+#    echo Invalid Usage
+#    exit
+#fi
+
+config_loc="/home/$USER/.config/xfce4-theme-switcher/$2"
+log_name=$(date +"%m%d%y_%H%M%S")
+
+if [ $1 = "-l" ]; #change the theme to the name given
 then
+    theme_load=$2
+    load_theme
+elif [ $1 = "-n" ] || [ $1 = "-p" ];
+then
+    theme_current=$(cat /home/$USER/.config/xfce4-theme-switcher/theme.current)
+    theme_array=()
+    for i in $( ls /home/$USER/.config/xfce4-theme-switcher);
+    do
+        if [ -d /home/$USER/.config/xfce4-theme-switcher/$i ];
+        then
+            theme_array+=($i)
+        fi
+    done
+    count=0
+    found=false
+    for theme in ${theme_array[@]};
+    do
+        if [ "$theme" = "$theme_current" ];
+        then
+            break #found theme
+        fi
+        ((count++))
+    done
+    size=$((${#theme_array[@]}-1))
+    if [ $1 = "-n" ];
+    then
+        if [ $count -eq $size ];
+        then
+            theme_load=${theme_array[0]}
+        else
+            ((count++))
+            theme_load=${theme_array[$count]}
+        fi
+        config_loc="/home/$USER/.config/xfce4-theme-switcher/$theme_load"
+        load_theme
+        exit
+    else
+        if [ $count -eq 0 ];
+        then
+            theme_load=${theme_array[$size]}
+        else
+            ((count--))
+            theme_load=${theme_array[$count]}
+        fi
+        config_loc="/home/$USER/.config/xfce4-theme-switcher/$theme_load"
+        load_theme
+        exit
+    fi
+elif [ $1 = "-s" ]; #save a new theme using current settings
+then
+    for i in $@
+    do
+        if [ $i = "--wal-theme" ];
+        then
+            wal_enabled=true
+        else
+            wal_enabled=false
+        fi
+    done
     if [ -d $config_loc ];
     then
         echo Theme $2 already exists! Do you want to overwrite it? [y/n]
@@ -90,6 +142,7 @@ then
         cp /home/$USER/.cache/wal/sequences $config_loc/sequences &> /dev/null
         echo wal theme saved
     fi
+    echo $2 > /home/$USER/.config/xfce4-theme-switcher/theme.current
 elif [ $1 = "-d" ]; #delete theme
 then
     echo Are you sure you want to delete xfce4 theme $2? [y/n]
@@ -101,5 +154,11 @@ then
     rm -rf $config_loc
 elif [ $1 = "--list" ]; #list all themes
 then
-    ls -1 /home/$USER/.config/xfce4-theme-switcher
+    for theme in $(ls /home/$USER/.config/xfce4-theme-switcher);
+    do
+        if [ -d /home/$USER/.config/xfce4-theme-switcher/$theme ];
+        then
+            echo $theme
+        fi
+    done
 fi
