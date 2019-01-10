@@ -36,7 +36,10 @@ function load_theme() {
         cp $config_loc/sequences /home/$USER/.cache/wal/sequences
         ls -1 /dev/pts | while read -r terminal
         do
-            (cat ~/.cache/wal/sequences &) > /dev/pts/$terminal
+            if [ $terminal != "ptmx" ];
+            then
+                (cat ~/.cache/wal/sequences &) > /dev/pts/$terminal
+            fi
         done
 
     fi
