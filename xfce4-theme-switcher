@@ -1,5 +1,26 @@
 #!/bin/bash
-
+function invalid() {
+    echo -e Invalid usage
+    echo -e Try \'xfce4-theme-switcher --help\' for more information
+    exit
+}
+function help() {
+    echo -e "Usage:"
+    echo -e " xfce4-theme-switcher [OPTION]"
+    echo -e " xfce4-theme-switcher -l [THEME NAME]"
+    echo -e " xfce4-theme-switcher -s [THEME NAME]"
+    echo -e " xfce4-theme-switcher -d [THEME NAME]\n"
+    echo -e "Change or save different thmemes for the xfce4 desktop environment.\n"
+    echo -e "Options:"
+    echo -e " -d\t\tdelete a theme given by the theme name"
+    echo -e " -l\t\tload a theme given by the theme name"
+    echo -e " -n\t\tcycle to the next theme"
+    echo -e " -p\t\tcycle to the previous theme"
+    echo -e " -s\t\tsave the current xfce4 settings as a theme given the theme name"
+    echo -e " --list\t\tlist all themes"
+    echo -e " --help\t\tdisplay this help\n"
+    exit
+}
 function load_theme() {
     array=("xsettings" "xfwm4" "xfce4-desktop" "xfce4-panel")
     for file in ${array[@]}
@@ -47,14 +68,14 @@ function load_theme() {
     echo $theme_load > /home/$USER/.config/xfce4-theme-switcher/theme.current
 }
 
-############
-### TODO ###
-############
-#if [ $# -ne 2 ];
-#then
-#    echo Invalid Usage
-#    exit
-#fi
+        #######################
+        ### start of script ###
+        #######################
+
+if [ $# -eq 0 ];
+then
+    invalid
+fi
 
 config_loc="/home/$USER/.config/xfce4-theme-switcher/$2"
 log_name=$(date +"%m%d%y_%H%M%S")
@@ -164,4 +185,9 @@ then
             echo $theme
         fi
     done
+elif [ $1 == "--help" ];
+then
+    help
+else
+    invalid
 fi
