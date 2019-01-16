@@ -59,22 +59,31 @@ function load_theme() {
     echo -e Loaded terminal preferences &>> $config_loc/$log_name.log
     if [ -f $config_loc/sequences ]; then
         cp $config_loc/sequences /home/$USER/.cache/wal/sequences
-        ls -1 /dev/pts | while read -r terminal
+        ls -1 /dev/pts | while read -r terminal;
         do
             if [ $terminal != "ptmx" ];
             then
                 (cat ~/.cache/wal/sequences &) > /dev/pts/$terminal
             fi
         done
-
+    else
+        #TODO
+        #going from wal-theme terminal to normal terminal
+        ls -1 /dev/pts | while read -r terminal;
+        do
+            if [ $terminal != "ptmx" ];
+            then
+                tset > /dev/pts/$terminal #DOES NOT WORK 
+            fi
+        done
     fi
     xfce4-panel -r
     echo $theme_load > /home/$USER/.config/xfce4-theme-switcher/theme.current
 }
 
-        #######################
-        ### start of script ###
-        #######################
+###########################################
+############ start of script ##############
+###########################################
 
 if [ $# -eq 0 ];
 then
