@@ -1,3 +1,6 @@
 #!/bin/bash
+
 cp xfce4-theme-switcher /usr/local/bin
-mkdir ~/.config/xfce4-theme-switcher
+if ! [ -d /home/$USER/.config/xfce4-theme-switcher ]; then
+    mkdir ~/.config/xfce4-theme-switcher
+fi

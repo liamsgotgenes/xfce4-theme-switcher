@@ -77,6 +77,9 @@ function load_theme() {
             fi
         done
     fi
+    if [ -f $config_loc/colors.sh ]; then
+        cp $config_loc/colors.sh /home/$USER/.cache/wal/colors.sh &> /dev/null
+    fi
     xfce4-panel -r
     echo $theme_load > /home/$USER/.config/xfce4-theme-switcher/theme.current
 }
@@ -84,7 +87,8 @@ function load_theme() {
 ###########################################
 ############ start of script ##############
 ###########################################
-
+wal_enabled=false
+dmenu_enabled=false
 if [ $# -eq 0 ];
 then
     invalid
@@ -155,8 +159,9 @@ then
         if [ $i = "--wal-theme" ];
         then
             wal_enabled=true
-        else
-            wal_enabled=false
+        fi
+        if [ $i = "--dmenu" ]; then
+            dmenu_enabled=true
         fi
     done
     if [ -d $config_loc ];
@@ -183,6 +188,10 @@ then
     if [ "$wal_enabled" = true ]; then
         cp /home/$USER/.cache/wal/sequences $config_loc/sequences &> /dev/null
         echo wal theme saved
+    fi
+    if [ "$dmenu_enabled" = true ]; then
+        cp /home/$USER/.cache/wal/colors.sh $config_loc/colors.sh &>/dev/null
+        echo dmenu theme saved
     fi
     echo $2 > /home/$USER/.config/xfce4-theme-switcher/theme.current
 elif [ $1 = "-d" ]; #delete theme
