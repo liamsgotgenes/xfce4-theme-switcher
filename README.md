@@ -28,6 +28,7 @@ I also included support for [pywal](https://github.com/dylanaraps/pywal/tree/mas
     -s		save the current xfce4 settings as a theme given the theme name
     --list		list all themes
     --help		display this help
+    --dmenu     saves (wal generated) dmenu colors
     --wal-theme	saves pywal terminal color-scheme must have pywal to use. Only use on saves
     
 ### Known Bugs
