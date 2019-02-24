@@ -25,6 +25,7 @@ function help() {
     echo -e "\t\tonly use on saves\n"
     exit
 }
+
 function load_theme() {
     array=("xsettings" "xfwm4" "xfce4-desktop" "xfce4-panel")
     for file in ${array[@]}
@@ -70,6 +71,7 @@ function load_theme() {
     else
         #TODO
         #going from wal-theme terminal to normal terminal
+        rm $HOME/.cache/wal/sequences
         ls -1 /dev/pts | while read -r terminal;
         do
             if [ $terminal != "ptmx" ];
@@ -83,6 +85,19 @@ function load_theme() {
     fi
     xfce4-panel -r
     echo $theme_load > /home/$USER/.config/xfce4-theme-switcher/theme.current
+    lightdm
+}
+
+#TODO#
+#need to check for permission to lightdm config file. If no permission, prompt to change permission??
+#also maybe change wallpaper and font too
+function lightdm() {
+    #replace theme
+    wm_theme="$(xfconf-query -c xfwm4 -p /general/theme)" #get loaded theme
+    sed -Ei "s/theme-name.*/theme-name = $wm_theme/" /etc/lightdm/lightdm-gtk-greeter.conf #replace theme in config file
+    #replace font
+    wm_font="$(xfconf-query -c xfwm4 -p /general/title_font)" #get loaded font
+    sed -Ei "s/font-name.*/font-name= $wm_font/" /etc/lightdm/lightdm-gtk-greeter.conf
 }
 
 ###########################################
