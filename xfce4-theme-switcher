@@ -69,16 +69,17 @@ function load_theme() {
             fi
         done
     else
-        #TODO
         #going from wal-theme terminal to normal terminal
         rm $HOME/.cache/wal/sequences
         ls -1 /dev/pts | while read -r terminal;
         do
             if [ $terminal != "ptmx" ];
             then
-                tset > /dev/pts/$terminal #DOES NOT WORK 
+                (cat ~/.config/xfce4-theme-switcher/sequencesRESET &) > /dev/pts/$terminal
             fi
         done
+        #tset > /dev/pts/$terminal #DOES NOT WORK 
+        tset
     fi
     if [ -f $config_loc/colors.sh ]; then
         cp $config_loc/colors.sh /home/$USER/.cache/wal/colors.sh &> /dev/null
