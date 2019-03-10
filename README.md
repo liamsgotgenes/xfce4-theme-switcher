@@ -32,11 +32,10 @@ I also included support for [pywal](https://github.com/dylanaraps/pywal/tree/mas
     --wal-theme	saves pywal terminal color-scheme must have pywal to use. Only use on saves
     
 ### Known Bugs
-* Loading a theme that does not use pywal while a pywal color-scheme is currently active will result in the open terminals failing to change color. Any terminals opened after the theme is loaded will have the correct color
 * On occasion, when loading a theme for the first time, the font may change and stay changed. This can be fixed by reloading the same theme again. I have only noticed this affecting terminal font but may affect other things. I am currently looking into the cause of this, so hopefully it will be fixed soon
 
 ### Future Plans
 * Fix bugs (duh)
 * More useful output
 * Better error checking and handling. Right now, there is very little of this.
-* Support for commonly used applications (dmenu, rofi...)
+* Support for commonly used applications (rofi...)
