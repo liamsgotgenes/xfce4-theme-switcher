@@ -78,8 +78,6 @@ function load_theme() {
                 (cat ~/.config/xfce4-theme-switcher/sequencesRESET &) > /dev/pts/$terminal
             fi
         done
-        #tset > /dev/pts/$terminal #DOES NOT WORK 
-        tset
     fi
     if [ -f $config_loc/colors.sh ]; then
         cp $config_loc/colors.sh /home/$USER/.cache/wal/colors.sh &> /dev/null
