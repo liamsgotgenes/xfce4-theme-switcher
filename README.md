@@ -35,7 +35,7 @@ I also included support for [pywal](https://github.com/dylanaraps/pywal/tree/mas
 * On occasion, when loading a theme for the first time, the font may change and stay changed. This can be fixed by reloading the same theme again. I have only noticed this affecting terminal font but may affect other things. I am currently looking into the cause of this, so hopefully it will be fixed soon
 
 ### Future Plans
-* Fix bugs (duh)
+* Fix bugs
 * More useful output
 * Better error checking and handling. Right now, there is very little of this.
 * Support for commonly used applications (rofi...)
