@@ -1,10 +1,6 @@
 #!/bin/bash
-function invalid() {
-    echo -e Invalid usage
-    echo -e Try \'xfce4-theme-switcher --help\' for more information
-    exit
-}
-function help() {
+
+function usage() {
     echo -e "\nUsage:"
     echo -e " xfce4-theme-switcher [OPTION]"
     echo -e " xfce4-theme-switcher -l [THEME NAME]"
@@ -21,203 +17,230 @@ function help() {
     echo -e " --help\t\tdisplay this help"
     echo -e " --dmenu\tsaves (wal generated) dmenu colors"
     echo -e " --wal-theme\tsaves pywal terminal color-scheme"
-    echo -e "\t\tmust have pywal to use"
-    echo -e "\t\tonly use on saves\n"
+    echo -e "\t\t  must have pywal to use"
+    echo -e "\t\t  only use on saves\n"
     exit
 }
 
-function load_theme() {
-    array=("xsettings" "xfwm4" "xfce4-desktop" "xfce4-panel")
-    for file in ${array[@]}
-    do
-        echo $config_loc/$file.conf | xargs cat | while read -r line
-        do
-            count=0
-            property=""
-            value=""
-            for word in $line
-            do
-                if [ $count -gt "0" ];
-                then
-                    value="$value $word"
-                else
-                    property="$property $word"
-                fi
-                let "count++"
-            done
-            property="$(echo -e "${property}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-            value="$(echo -e "${value}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-            rm $config_loc/*log &> /dev/null
-            xfconf-query -c $file -p $property -s "$value" &>> $config_loc/$log_name.log
-            if [ $? -eq "0" ];
-            then
-                echo -e Changed $property to the value $value &>> $config_loc/$log_name.log
-            else
-                echo -e ERROR: Could not change $property to the value $value &>> $config_loc/$log_name.log
-            fi
-        done
-    done
-    cp /$config_loc/terminalrc /home/$USER/.config/xfce4/terminal/terminalrc &>> $config_loc/$log_name.log
-    echo -e Loaded terminal preferences &>> $config_loc/$log_name.log
-    if [ -f $config_loc/sequences ]; then
-        cp $config_loc/sequences /home/$USER/.cache/wal/sequences
-        ls -1 /dev/pts | while read -r terminal;
-        do
-            if [ $terminal != "ptmx" ];
-            then
-                (cat ~/.cache/wal/sequences &) > /dev/pts/$terminal
-            fi
-        done
+function load_panel() {
+    echo "Loading panel configuration from ${CONFIG_DIR}${name}-panel.tar.bz2"
+    xfce4-panel-profiles load ${CONFIG_DIR}${name}-panel.tar.bz2 &> /dev/null
+    if [ $? -eq 0 ]; then
+        echo "Done"
     else
-        #going from wal-theme terminal to normal terminal
-        rm $HOME/.cache/wal/sequences
-        ls -1 /dev/pts | while read -r terminal;
-        do
-            if [ $terminal != "ptmx" ];
-            then
-                (cat ~/.config/xfce4-theme-switcher/sequencesRESET &) > /dev/pts/$terminal
-            fi
-        done
+        echo "Error"
     fi
-    if [ -f $config_loc/colors.sh ]; then
-        cp $config_loc/colors.sh /home/$USER/.cache/wal/colors.sh &> /dev/null
-    fi
-    xfce4-panel -r
-    echo $theme_load > /home/$USER/.config/xfce4-theme-switcher/theme.current
 }
 
+function load_terminalrc() {
+    echo "Loading terminal settings from ${CONFIG_DIR}terminalrc"
+    if [ ! -f ${CONFIG_DIR}terminalrc ]; then
+        echo "Error, could not find file."
+        return
+    fi
+    cp "${CONFIG_DIR}terminalrc" $HOME/.config/xfce4/terminal/terminalrc
+    echo "Done"
+}
 
-###########################################
-############ start of script ##############
-###########################################
-wal_enabled=false
-dmenu_enabled=false
-if [ $# -eq 0 ];
-then
-    invalid
-fi
+function load_xfconf() {
+    echo "Loading ${1} from ${CONFIG_DIR}${1}.conf"
+    echo "${CONFIG_DIR}$1.conf" | xargs cat | while read -r line; do
+        count=0
+        property=""
+        value=""
+        for word in $line; do
+            if [ $count -gt 0 ]; then
+                value="${value} ${word}"
+            else
+                property="$property $word"
+            fi
+            let "count++"
+        done
+        property="$(echo -e "${property}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+        value="$(echo -e "${value}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+        rm $config_loc/*log &> /dev/null
+        xfconf-query -c $1 -p $property -s "$value" &> /dev/null
+    done
+    echo "Done"
+}
 
-if [ ! -d /home/$USER/.config/xfce4-theme-switcher ];
-then
-    mkdir /home/$USER/.config/xfce4-theme-switcher
-fi
+function load() {
+    CONFIG_DIR="${DIR}${name}/"
 
-config_loc="/home/$USER/.config/xfce4-theme-switcher/$2"
-log_name=$(date +"%m%d%y_%H%M%S")
+    load_xfconf "xsettings"
+    load_xfconf "xfwm4"
+    load_xfconf "xfce4-desktop"
+    
+    load_terminalrc
 
-if [ $1 = "-l" ]; #change the theme to the name given
-then
-    theme_load=$2
-    load_theme
-elif [ $1 = "-n" ] || [ $1 = "-p" ];
-then
-    theme_current=$(cat /home/$USER/.config/xfce4-theme-switcher/theme.current)
-    theme_array=()
-    for i in $( ls /home/$USER/.config/xfce4-theme-switcher);
-    do
-        if [ -d /home/$USER/.config/xfce4-theme-switcher/$i ];
-        then
-            theme_array+=($i)
+    load_panel
+
+    echo $name > "${DIR}theme.current"
+}
+
+function save_panel() {
+    echo "Saving panel configuration to ${CONFIG_DIR}${name}-panel.tar.bz2"
+    xfce4-panel-profiles save "${CONFIG_DIR}${name}-panel.tar.bz2"
+    echo "Done"
+}
+
+function save() {
+    CONFIG_DIR="${DIR}${name}/"
+
+    # check if .config dir exists, if not it creates it
+    if [ ! -d $DIR ]; then
+        echo "${DIR} not found, creating directory."
+        mkdir $DIR
+    fi
+
+    # checks if theme with same name exists and asks if user would like to overwrite it
+    if [ -d $CONFIG_DIR ]; then
+        echo -e "Theme ${name} already exists.\nWould you like to overwrite it? [Y/n] "
+        read input
+        if [[ "$input" = "n" || "$input" = "N" ]]; then  # Do not overwrite; exit
+            echo "Exiting..."
+            exit
+        fi
+    else
+        mkdir $CONFIG_DIR
+    fi
+
+    echo "Saving xsettings to  ${CONFIG_DIR}xsettings.conf"
+    xfconf-query -c xsettings -lv > "${CONFIG_DIR}xsettings.conf"
+    echo "Done"
+
+    echo "Saving xfwm4 to ${CONFIG_DIR}xfwm4.conf"
+    xfconf-query -c xfwm4 -lv > "${CONFIG_DIR}xfwm4.conf"
+    echo "Done"
+
+    echo "Saving desktop settings to ${CONFIG_DIR}xfce4-desktop.conf"
+    xfconf-query -c xfce4-desktop -lv > "${CONFIG_DIR}xfce4-desktop.conf"
+    echo "Done"
+
+    echo "Saving xfce4-terminal settings to ${CONFIG_DIR}terminalrc"
+    cp $HOME/.config/xfce4/terminal/terminalrc "${CONFIG_DIR}terminalrc"
+    echo "Done"
+
+    save_panel
+}
+
+function list() {
+    for theme in $(ls ${DIR}); do
+        if [ -d $DIR$theme ]; then
+            echo $theme
+        fi
+    done
+}
+
+function delete() {
+    if [ ! -d $DIR$name ]; then
+        echo "Could not find theme $name"
+        exit
+    fi
+    read -p "Are you sure you want to delete theme ${name}? [Y/n] " input
+    if [[ ! "$input" = "y" && ! "$input" = "Y" ]]; then
+        echo "Exiting..."
+        exit
+    fi
+    echo "Removing theme ${name}"
+    rm -rf $DIR$name
+    echo "Done"
+}
+
+function next() {
+    current=$(cat "${DIR}theme.current")
+    array=()
+    for theme in $(ls $DIR); do
+        if [ -d "${DIR}$theme" ]; then
+            array+=($theme)
         fi
     done
     count=0
     found=false
-    for theme in ${theme_array[@]};
-    do
-        if [ "$theme" = "$theme_current" ];
-        then
-            break #found theme
+    for i in ${array[@]}; do
+        if [ "$i" = "$current" ]; then
+            break
         fi
         ((count++))
     done
-    size=$((${#theme_array[@]}-1))
-    if [ $1 = "-n" ];
-    then
-        if [ $count -eq $size ];
-        then
-            theme_load=${theme_array[0]}
-        else
-            ((count++))
-            theme_load=${theme_array[$count]}
-        fi
-        config_loc="/home/$USER/.config/xfce4-theme-switcher/$theme_load"
-        load_theme
-        exit
+    size=$((${#array[@]}-1))
+
+    if [ $count -eq $size ]; then
+        name=${array[0]}
     else
-        if [ $count -eq 0 ];
-        then
-            theme_load=${theme_array[$size]}
-        else
-            ((count--))
-            theme_load=${theme_array[$count]}
-        fi
-        config_loc="/home/$USER/.config/xfce4-theme-switcher/$theme_load"
-        load_theme
-        exit
+        ((count++))
+        name=${array[$count]}
     fi
-elif [ $1 = "-s" ]; #save a new theme using current settings
-then
-    for i in $@
-    do
-        if [ $i = "--wal-theme" ];
-        then
-            wal_enabled=true
-        fi
-        if [ $i = "--dmenu" ]; then
-            dmenu_enabled=true
+    load
+}
+
+function previous() {
+    current=$(cat "${DIR}theme.current")
+    array=()
+    for theme in $(ls $DIR); do
+        if [ -d "${DIR}$theme" ]; then
+            array+=($theme)
         fi
     done
-    if [ -d $config_loc ];
-    then
-        echo Theme $2 already exists! Do you want to overwrite it? [y/n]
-        read input
-        if [ $input != "y" ];
-        then
-            exit
+    count=0
+    found=false
+    for i in ${array[@]}; do
+        if [ "$i" = "$current" ]; then
+            break
         fi
-    else
-        mkdir $config_loc
-    fi
-    xfconf-query -c xsettings -lv > $config_loc/xsettings.conf
-    echo -e Generated xsettings theme $2
-    xfconf-query -c xfwm4 -lv > $config_loc/xfwm4.conf
-    echo -e Generated xfwm4 theme $2
-    xfconf-query -c xfce4-desktop -lv > $config_loc/xfce4-desktop.conf
-    echo -e Generated desktop theme $2
-    xfconf-query -c xfce4-panel -lv > $config_loc/xfce4-panel.conf
-    echo -e Generated panel theme $2
-    cp /home/$USER/.config/xfce4/terminal/terminalrc $config_loc/terminalrc &> /dev/null
-    echo -e Copied terminal preferences
-    if [ "$wal_enabled" = true ]; then
-        cp /home/$USER/.cache/wal/sequences $config_loc/sequences &> /dev/null
-        echo wal theme saved
-    fi
-    if [ "$dmenu_enabled" = true ]; then
-        cp /home/$USER/.cache/wal/colors.sh $config_loc/colors.sh &>/dev/null
-        echo dmenu theme saved
-    fi
-    echo $2 > /home/$USER/.config/xfce4-theme-switcher/theme.current
-elif [ $1 = "-d" ]; #delete theme
-then
-    echo Are you sure you want to delete xfce4 theme $2? [y/n]
-    read input
-    if [ $input != "y" ];
-    then
-        exit
-    fi
-    rm -rf $config_loc
-elif [ $1 = "--list" ]; #list all themes
-then
-    for theme in $(ls /home/$USER/.config/xfce4-theme-switcher);
-    do
-        if [ -d /home/$USER/.config/xfce4-theme-switcher/$theme ];
-        then
-            echo $theme
-        fi
+        ((count++))
     done
-elif [ $1 == "--help" ];
-then
-    help
-else
-    invalid
+    size=$((${#array[@]}-1))
+
+    if [ $count -eq 0 ]; then
+        name=${array[$size]}
+    else
+        ((count--))
+        name=${array[$count]}
+    fi
+    load
+}
+
+###################
+#                 #
+# Start of script #
+#                 #
+###################
+
+DIR="${HOME}/.config/xfce4-theme-switcher/"
+case $1 in
+    -l|--load)
+        name="$2"
+        load
+        ;;
+    -s|--save)
+        name="$2"
+        save
+        echo $name > "${DIR}theme.current"
+        ;;
+    -d|--delete)
+        name="$2"
+        delete
+        ;;
+    -n|--next)
+        next
+        ;;
+    -p|--previous)
+        previous
+        ;;
+    --list)
+        list
+        ;;
+    *)
+        usage
+        ;;
+esac
+
+# Extras
+
+if [[ $* == *--wal* ]]; then  # change pywal colors
+    return
+fi
+if [[ $* == *--dmenu* ]]; then  # change dmenu colors
+    return
 fi
