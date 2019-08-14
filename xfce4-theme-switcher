@@ -16,13 +16,17 @@ function usage() {
     echo -e " --list\t\tlist all themes"
     echo -e " --help\t\tdisplay this help"
     echo -e " --dmenu\tsaves (wal generated) dmenu colors"
-    echo -e " --wal-theme\tsaves pywal terminal color-scheme"
-    echo -e "\t\t  must have pywal to use"
-    echo -e "\t\t  only use on saves\n"
+    echo -e " --wal\t\tsaves pywal terminal color-scheme"
+    echo -e "\t\t  must have pywal to use only used on saves"
     exit
 }
 
 function load_panel() {
+    command -v xfce4-panel-profiles &> /dev/null
+    if [ $? -eq 1 ]; then
+        echo -e "\n!! Command \"xfce4-panel-profiles\" not found. Skipping loading panel configuration !!\n"
+        return
+    fi
     echo "Loading panel configuration from ${CONFIG_DIR}${name}-panel.tar.bz2"
     xfce4-panel-profiles load ${CONFIG_DIR}${name}-panel.tar.bz2 &> /dev/null
     if [ $? -eq 0 ]; then
@@ -74,11 +78,14 @@ function load() {
     load_terminalrc
 
     load_panel
-
-    echo $name > "${DIR}theme.current"
 }
 
 function save_panel() {
+    command -v xfce4-panel-profiles &> /dev/null
+    if [ $? -eq 1 ]; then
+        echo -e "\n!! Command \"xfce4-panel-profiles\" not found. Skipping loading panel configuration !!\n"
+        return
+    fi
     echo "Saving panel configuration to ${CONFIG_DIR}${name}-panel.tar.bz2"
     xfce4-panel-profiles save "${CONFIG_DIR}${name}-panel.tar.bz2"
     echo "Done"
@@ -212,6 +219,7 @@ case $1 in
     -l|--load)
         name="$2"
         load
+        echo $name > "${DIR}theme.current"
         ;;
     -s|--save)
         name="$2"
