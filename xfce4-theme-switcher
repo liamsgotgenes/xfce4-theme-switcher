@@ -15,10 +15,33 @@ function usage() {
     echo -e " -s\t\tsave the current xfce4 settings as a theme given the theme name"
     echo -e " --list\t\tlist all themes"
     echo -e " --help\t\tdisplay this help"
-    echo -e " --dmenu\tsaves (wal generated) dmenu colors"
     echo -e " --wal\t\tsaves pywal terminal color-scheme"
     echo -e "\t\t  must have pywal to use only used on saves"
     exit
+}
+
+function load_wal() {
+    echo "Loading wal theme"
+    if [ -f $CONFIG_DIR/sequences ]; then
+        cp $CONFIG_DIR/sequences $HOME/.cache/wal/sequences
+        ls -1 /dev/pts | while read -r terminal; do
+            if [ $terminal != "ptmx" ]; then
+                (cat ~/.cache/wal/sequences &) > /dev/pts/$terminal
+            fi
+        done
+    else
+        rm $HOME/.cache/wal/sequences
+        #going from wal-theme terminal to normal terminal
+
+        #ls -1 /dev/pts | while read -r terminal;
+        #do
+        #    if [ $terminal != "ptmx" ];
+        #    then
+        #        (cat ~/.config/xfce4-theme-switcher/sequencesRESET &) > /dev/pts/$terminal
+        #    fi
+        #done
+    fi
+    echo "Done"
 }
 
 function load_panel() {
@@ -78,6 +101,18 @@ function load() {
     load_terminalrc
 
     load_panel
+
+    if [ -f $CONFIG_DIR/sequences ]; then
+        load_wal
+    else
+        rm $HOME/.cache/wal/sequences
+    fi
+}
+
+function save_wal() {
+    echo "Saving wal theme"
+    cp $HOME/.cache/wal/sequences $CONFIG_DIR/sequences
+    echo "Done"
 }
 
 function save_panel() {
@@ -129,6 +164,10 @@ function save() {
     echo "Done"
 
     save_panel
+
+    if [ ! -z $wal ]; then
+        save_wal
+    fi
 }
 
 function list() {
@@ -214,6 +253,10 @@ function previous() {
 #                 #
 ###################
 
+if [[ $* == *--wal* ]]; then  # change pywal colors
+    wal=true
+fi
+
 DIR="${HOME}/.config/xfce4-theme-switcher/"
 case $1 in
     -l|--load)
@@ -243,12 +286,3 @@ case $1 in
         usage
         ;;
 esac
-
-# Extras
-
-if [[ $* == *--wal* ]]; then  # change pywal colors
-    return
-fi
-if [[ $* == *--dmenu* ]]; then  # change dmenu colors
-    return
-fi
