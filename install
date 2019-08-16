@@ -2,4 +2,3 @@
 
 sudo cp xfce4-theme-switcher /usr/local/bin
 mkdir $HOME/.config/xfce4-theme-switcher
-cp ./sequencesRESET /$HOME/.config/xfce4-theme-switcher/
